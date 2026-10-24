@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+.next/
+coverage/
+*.tsbuildinfo
 
 # SQLite database (server)
 server/*.db

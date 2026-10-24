@@ -1,117 +1,79 @@
-# 💸 Expense Tracker · Analytics Dashboard
+# FinTrack
 
-A responsive, **full-stack** financial analytics dashboard to monitor and manage expenses, built with **React**, **Redux Toolkit**, and **Chart.js** on the front end and a **Node/Express + SQLite** API on the back end. It turns raw transactions into real-time insights — spending by category, cash-flow trends, budget tracking, and exportable reports — behind secure per-user accounts, with a polished UI in both light and dark themes.
+FinTrack is a personal-finance analytics project being migrated from a React/Vite and SQLite prototype to a typed Next.js and PostgreSQL application. The modern implementation lives in `apps/web`; the original application remains at the repository root as a working regression reference while feature parity is built.
 
-![Tech](https://img.shields.io/badge/React-18-61dafb) ![Tech](https://img.shields.io/badge/Redux%20Toolkit-2-764abc) ![Tech](https://img.shields.io/badge/Chart.js-4-ff6384) ![Tech](https://img.shields.io/badge/Express-4-000000) ![Tech](https://img.shields.io/badge/SQLite-node%3Asqlite-003b57) ![Tech](https://img.shields.io/badge/Vite-5-646cff)
+## Why this repository is different
 
-## ✨ Features
+This project focuses on financial-domain modelling and reporting rather than ecommerce or AI workflows:
 
-### Accounts & security
-- **Register / sign in / sign out** with per-user data isolation — every account sees only its own transactions and budgets.
-- **Password hashing** with bcrypt; sessions via **JWT** (`Authorization: Bearer` tokens).
-- **Forgot / reset password** with single-use, 15-minute expiring tokens. *(Email delivery isn't wired up in this demo, so the reset link is surfaced directly — see [Security notes](#-security-notes).)*
-- **Persistent sessions** — a refresh keeps you signed in; your data is loaded from the server, not the browser.
+- Money is stored as integer cents, avoiding floating-point rounding in persistence and calculations.
+- Every account, transaction and budget belongs to a user at the schema and query layers.
+- PostgreSQL constraints enforce positive values, transaction direction, account type, monthly budget uniqueness and referential integrity.
+- Dashboard calculations are isolated in typed domain functions with unit tests.
+- Repository integration tests exercise real PostgreSQL queries in CI.
+- The dashboard falls back to clearly labelled demo data when no database is configured; it never presents demo values as live account data.
 
-### Analytics & tracking
-- **Analytics dashboard** — KPI cards (income, spending, net balance, savings rate) that update in real time.
-- **Interactive visualizations** (Chart.js): cash-flow line chart, spending-by-category doughnut with a live legend, and a monthly net surplus/deficit bar chart.
-- **Transactions** — add, edit, delete, search, and filter by type/category.
-- **Budgets** — set monthly caps per category with progress bars and over-budget warnings.
-- **Reports** — custom date-range analysis, category breakdown table, and **CSV export**.
-- **Robust state management** with Redux Toolkit slices, memoized selectors, and a listener-middleware sync layer that debounces saves to the API.
-- **Responsive & themeable** — collapsible mobile sidebar and a light/dark toggle that respects your OS preference.
-- **Seeded demo data** for every new account so the dashboard looks alive immediately.
+## Modern stack
 
-## 🛠 Tech Stack
+| Area | Technology |
+| --- | --- |
+| Application | Next.js App Router, React, strict TypeScript |
+| Database | PostgreSQL 17 with versioned SQL migrations |
+| Data access | Parameterised `pg` queries scoped by user id |
+| Testing | Vitest unit and PostgreSQL integration tests |
+| Delivery | Docker multi-stage build and GitHub Actions |
 
-| Concern         | Choice                                        |
-| --------------- | --------------------------------------------- |
-| UI              | React 18 + React Router                       |
-| State           | Redux Toolkit + React-Redux (+ listener sync) |
-| Charts          | Chart.js 4 + react-chartjs-2                  |
-| Build tool      | Vite 5                                        |
-| API             | Node.js + Express 4                           |
-| Database        | SQLite via the built-in `node:sqlite` module  |
-| Auth            | bcryptjs (hashing) + jsonwebtoken (JWT)       |
-| Styling         | Hand-rolled CSS design system                 |
+## Structure
 
-## 🚀 Getting Started
+```text
+apps/web/
+  db/migrations/       versioned PostgreSQL schema
+  scripts/             migration and labelled demo-seed commands
+  src/app/             Next.js pages and health endpoint
+  src/lib/finance.ts   typed money and dashboard calculations
+  src/lib/db/          connection and user-scoped repository queries
 
-Requires **Node.js 22.5+** (the API uses the built-in `node:sqlite` module).
-
-```bash
-# install dependencies (front end + API share one package.json)
-npm install
-
-# start BOTH the API and the web app together
-npm run dev
+src/ and server/       original Vite/Express/SQLite application
 ```
 
-- Web app → **http://localhost:8080**
-- API → **http://localhost:4000** (the Vite dev server proxies `/api` to it)
+## Run the Next.js application
 
-Other scripts:
+Requires Node.js 22.12+.
 
-```bash
-npm run dev:web    # Vite dev server only
-npm run dev:api    # Express API only
-npm run build      # production build of the front end
-npm run preview    # preview the production build
+```powershell
+cd apps/web
+npm.cmd ci
+npm.cmd run dev
 ```
 
-Optional environment variables for the API:
+Open `http://localhost:3000`. With no `DATABASE_URL`, the page uses the labelled demo dataset.
 
-```bash
-JWT_SECRET=your-long-random-secret   # REQUIRED in production
-API_PORT=4000                        # API port (default 4000)
-DB_PATH=./server/data.db             # SQLite file location
+### PostgreSQL-backed preview
+
+```powershell
+cd apps/web
+Copy-Item .env.example .env.local
+docker compose up -d --wait
+npm.cmd run db:migrate
+npm.cmd run db:seed
+npm.cmd run dev
 ```
 
-## 🧭 Project Structure
+The Compose database binds only to `127.0.0.1:5433` and stores its data in the `fintrack_postgres` volume. Normal `docker compose down` preserves that volume; do not add `-v` unless deleting local data is intentional.
 
-```
-server/                       # Express + SQLite API
-├─ server.js                  # app wiring, middleware, routes
-├─ db.js                      # node:sqlite schema + data-access helpers
-├─ security.js                # bcrypt, JWT, reset tokens, auth middleware
-└─ routes/
-   ├─ authRoutes.js           # register, login, me, forgot, reset
-   └─ dataRoutes.js           # per-user transactions + budgets (protected)
+## Verification
 
-src/
-├─ api/client.js              # fetch wrapper + token storage
-├─ app/
-│  ├─ store.js                # Redux store
-│  └─ syncMiddleware.js       # debounced server sync on data changes
-├─ features/
-│  ├─ auth/authSlice.js       # session thunks (bootstrap/login/register)
-│  ├─ transactions/           # transactions slice
-│  ├─ budgets/                # budgets slice
-│  ├─ ui/                     # theme slice
-│  └─ selectors.js            # memoized analytics selectors
-├─ components/                # Layout, Sidebar, Topbar, AuthLayout, charts, …
-├─ pages/
-│  ├─ auth/                   # Login, Register, ForgotPassword, ResetPassword
-│  ├─ Dashboard.jsx, Transactions.jsx, Budgets.jsx, Reports.jsx
-├─ utils/                     # analytics, formatting, dates, seed
-└─ data/categories.js         # category catalog (labels, icons, colors)
+```powershell
+cd apps/web
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test
+npm.cmd run build
+docker build -t fintrack-web .
 ```
 
-## 🏗 Architecture Notes
+GitHub Actions repeats those gates, applies the schema to PostgreSQL 17, runs the real repository contract test and builds the container without publishing it.
 
-- **Auth flow** — the client stores only a JWT in `localStorage`. On startup a `bootstrapSession` thunk validates the token (`GET /api/auth/me`) and loads the user's data (`GET /api/data`) into Redux. Protected routes redirect to `/login` when unauthenticated.
-- **Per-user persistence** — each user's transactions and budgets are stored server-side as a JSON blob keyed by user id. A Redux **listener middleware** watches for data mutations and debounces a `PUT /api/data`, so the UI stays snappy while the server stays in sync.
-- **Separation of concerns** — all number-crunching lives in pure functions under `utils/analytics.js`, exposed through memoized selectors, so components stay presentational.
-- **Consistency** — a single category catalog drives labels, icons, and the chart color palette everywhere.
+## Migration status
 
-## 🔒 Security notes
-
-This is a portfolio project; a couple of deliberate shortcuts are called out honestly:
-
-- **Password reset link is returned in the API response** (and logged server-side) because no email service is configured. In production this token would be emailed and never exposed to the client. The token itself is already production-shaped: random, SHA-256-hashed at rest, single-use, and expiring.
-- **Set a strong `JWT_SECRET`** in production. Without it the API falls back to an insecure development default and logs a warning.
-- Passwords are bcrypt-hashed; plaintext passwords are never stored or logged.
-
-## 📄 License
-
-MIT — free to use and adapt.
+The modern branch currently delivers the read-only analytics foundation, database schema, repository layer, health check, test coverage, container and CI pipeline. The original application still contains authentication and transaction editing; those flows should be migrated and security-reviewed before the Next.js application replaces it. This status is documented deliberately rather than presenting an incomplete rewrite as production-ready.
