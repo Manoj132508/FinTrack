@@ -1,5 +1,13 @@
 # 💸 Expense Tracker · Analytics Dashboard
 
+[![Next.js review branch CI](https://github.com/Manoj132508/FinTrack/actions/workflows/ci.yml/badge.svg?branch=portfolio-week%2Ffintrack-next-postgres)](https://github.com/Manoj132508/FinTrack/actions/workflows/ci.yml?query=branch%3Aportfolio-week%2Ffintrack-next-postgres)
+
+**Branch status:** this default branch contains the React/Vite, Express and SQLite
+application described below. The badge explicitly tracks the separate
+[`portfolio-week/fintrack-next-postgres` review branch](https://github.com/Manoj132508/FinTrack/tree/portfolio-week/fintrack-next-postgres),
+which adds a Next.js/TypeScript and PostgreSQL foundation. It does not mean the
+default branch has been migrated. [Verified review-branch CI run](https://github.com/Manoj132508/FinTrack/actions/runs/40085355865).
+
 A responsive, **full-stack** financial analytics dashboard to monitor and manage expenses, built with **React**, **Redux Toolkit**, and **Chart.js** on the front end and a **Node/Express + SQLite** API on the back end. It turns raw transactions into real-time insights — spending by category, cash-flow trends, budget tracking, and exportable reports — behind secure per-user accounts, with a polished UI in both light and dark themes.
 
 ![Tech](https://img.shields.io/badge/React-18-61dafb) ![Tech](https://img.shields.io/badge/Redux%20Toolkit-2-764abc) ![Tech](https://img.shields.io/badge/Chart.js-4-ff6384) ![Tech](https://img.shields.io/badge/Express-4-000000) ![Tech](https://img.shields.io/badge/SQLite-node%3Asqlite-003b57) ![Tech](https://img.shields.io/badge/Vite-5-646cff)
